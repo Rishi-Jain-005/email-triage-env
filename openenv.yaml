@@ -1,0 +1,102 @@
+# openenv.yaml — OpenEnv environment manifest
+# Validated by: openenv validate
+
+name: email-triage-env
+version: "1.0.0"
+description: >
+  A real-world RL environment where AI agents triage an inbox of emails.
+  The agent assigns a label (urgent/follow_up/archive/spam/delegate),
+  a priority (high/medium/low), and optionally drafts a reply.
+  Three tasks of increasing difficulty (easy → medium → hard) with
+  deterministic graders scoring 0.0–1.0.
+
+author: openenv-course-submission
+license: MIT
+
+# ── Environment interface ───────────────────────────────────────────────────
+interface:
+  reset_endpoint: /reset
+  step_endpoint: /step
+  state_endpoint: /state
+  health_endpoint: /health
+  websocket_endpoint: /ws
+
+# ── Task definitions ────────────────────────────────────────────────────────
+tasks:
+  - name: easy
+    difficulty: easy
+    description: "5 clearly labelled emails. Unambiguous labels and priorities."
+    num_emails: 5
+    score_range: [0.0, 1.0]
+    expected_score: 0.85
+
+  - name: medium
+    difficulty: medium
+    description: "5 emails with ambiguous subjects and multi-thread context."
+    num_emails: 5
+    score_range: [0.0, 1.0]
+    expected_score: 0.60
+
+  - name: hard
+    difficulty: hard
+    description: "5 high-stakes emails requiring nuanced reasoning."
+    num_emails: 5
+    score_range: [0.0, 1.0]
+    expected_score: 0.40
+
+# ── Action space ────────────────────────────────────────────────────────────
+action_space:
+  type: structured
+  fields:
+    label:
+      type: categorical
+      values: [urgent, follow_up, archive, spam, delegate]
+    priority:
+      type: categorical
+      values: [high, medium, low]
+    reply_draft:
+      type: text
+      max_length: 500
+      optional: true
+    reasoning:
+      type: text
+      optional: true
+
+# ── Observation space ───────────────────────────────────────────────────────
+observation_space:
+  type: structured
+  fields:
+    done: bool
+    reward: float_or_null
+    email_id: string
+    subject: string
+    sender: string
+    body: string
+    thread_length: integer
+    has_attachment: bool
+    emails_remaining: integer
+    feedback: string
+    task_description: string
+
+# ── Reward ──────────────────────────────────────────────────────────────────
+reward:
+  type: partial_progress
+  range: [0.0, 1.0]
+  components:
+    - name: label_correctness
+      weight: 0.50
+    - name: priority_correctness
+      weight: 0.30
+    - name: reply_completeness
+      weight: 0.20
+
+# ── Infrastructure ──────────────────────────────────────────────────────────
+infrastructure:
+  runtime: docker
+  base_image: python:3.11-slim
+  port: 8000
+  health_check: /health
+  env_vars:
+    - PORT
+    - WORKERS
+    - MAX_CONCURRENT_ENVS
