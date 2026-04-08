@@ -106,10 +106,10 @@ app = FastAPI(
 
 
 @app.post("/reset")
-def reset(req: ResetRequest) -> dict:
+def reset(req: Optional[ResetRequest] = None) -> dict:
     """Start a new episode for the specified task."""
     global _env
-    task_name = req.task_name if req.task_name in TASKS else "easy"
+    task_name = req.task_name if req and req.task_name in TASKS else "easy"
     _env = EmailTriageEnvironment(task_name=task_name)
     obs = _env.reset()
     return _obs_to_dict(obs)
