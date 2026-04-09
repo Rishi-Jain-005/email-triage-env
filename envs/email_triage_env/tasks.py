@@ -72,7 +72,7 @@ def _score_action(email: Email, action: EmailTriageAction) -> float:
         else:
             score += 0.2  # full credit for correctly not replying
 
-    return round(min(1.0, max(0.0, score)), 4)
+    return round(min(0.9999, max(0.0001, score)), 4)
 
 
 # ---------------------------------------------------------------------------

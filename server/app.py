@@ -161,66 +161,215 @@ def list_tasks() -> dict:
 
 WEB_UI = """
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Email Triage OpenEnv</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Triage — AI Workspace</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=Fira+Code&display=swap" rel="stylesheet">
   <style>
-    body { font-family: monospace; background:#111; color:#eee; padding:2rem; max-width:800px; margin:auto; }
-    h1 { color:#4ade80; }
-    pre { background:#1e1e1e; padding:1rem; border-radius:6px; overflow-x:auto; }
-    button { background:#4ade80; color:#111; border:none; padding:0.5rem 1.2rem;
-             border-radius:4px; cursor:pointer; font-size:1rem; margin:0.3rem; }
-    input, select { background:#1e1e1e; color:#eee; border:1px solid #555;
-                    padding:0.4rem; border-radius:4px; margin:0.2rem; }
-    .label { color:#86efac; font-weight:bold; }
-    .section { margin:1.5rem 0; padding:1rem; border:1px solid #333; border-radius:8px; }
+    :root {
+      --bg: #0b0f19;
+      --glass: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.5);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    body {
+      font-family: 'Outfit', sans-serif;
+      margin: 0; padding: 0;
+      background-color: var(--bg);
+      background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .container {
+      width: 100%; max-width: 900px;
+      margin: 3rem auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    h1 {
+      font-weight: 700;
+      font-size: 2.2rem;
+      text-align: center;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #a5b4fc, #818cf8, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .glass-card {
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem 2rem;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .glass-card:hover { border-color: rgba(255, 255, 255, 0.2); }
+    
+    .header-controls { display: flex; justify-content: space-between; align-items: center; }
+    
+    select, input, textarea {
+      font-family: 'Outfit', sans-serif;
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+    
+    button {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 4px 15px var(--accent-glow);
+      transition: all 0.2s;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--accent-glow); }
+    button:active { transform: translateY(1px); }
+
+    .email-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem; }
+    .email-meta { font-size: 0.9rem; color: var(--muted); }
+    .email-meta span { display: inline-block; background: rgba(255,255,255,0.05); padding: 0.2rem 0.6rem; border-radius: 12px; margin-right: 0.5rem; border: 1px solid var(--border); }
+    
+    .email-subject { font-size: 1.5rem; font-weight: 500; color: #fff; margin: 0.5rem 0; }
+    .email-sender { color: #a5b4fc; font-weight: 500; }
+    
+    .email-body {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 1.5rem;
+      color: #cbd5e1;
+    }
+
+    .triage-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .triage-group label { display: block; margin-bottom: 0.5rem; color: var(--muted); font-weight: 500; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+    .triage-group select { width: 100%; appearance: none; }
+
+    .full-width { grid-column: 1 / -1; }
+    textarea { width: 100%; resize: vertical; box-sizing: border-box; }
+
+    .slide-in { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #json-output { font-family: 'Fira Code', monospace; font-size: 0.85rem; color: #34d399; }
+    
+    /* Progress styling */
+    .progress-container { width: 100%; background: rgba(0,0,0,0.3); border-radius: 8px; height: 8px; overflow: hidden; margin-top: 1rem; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, #34d399, #10b981); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 10px rgba(52, 211, 153, 0.5); }
   </style>
 </head>
 <body>
-  <h1>📧 Email Triage OpenEnv</h1>
-  <div class="section">
-    <b>Task:</b>
-    <select id="task">
-      <option value="easy">Easy</option>
-      <option value="medium">Medium</option>
-      <option value="hard">Hard</option>
-    </select>
-    <button onclick="reset()">Reset Episode</button>
+  <div class="container">
+    <h1>📧 AI Triage Environment</h1>
+    
+    <div class="glass-card header-controls">
+      <div>
+        <label style="color:var(--muted); margin-right: 1rem; font-weight: 500;">SELECT WORKLOAD</label>
+        <select id="task">
+          <option value="easy">Level 1 - Easy</option>
+          <option value="medium">Level 2 - Medium</option>
+          <option value="hard">Level 3 - Hard</option>
+        </select>
+      </div>
+      <button onclick="reset()">Initialize Engine</button>
+    </div>
+
+    <div class="glass-card slide-in" id="email-panel" style="display:none">
+      <div class="email-header">
+        <div>
+          <div class="email-sender" id="sender"></div>
+          <div class="email-subject" id="subject"></div>
+        </div>
+        <div class="email-meta">
+          <span title="Thread Length">🧵 <b id="thread"></b></span>
+          <span title="Attachment">📎 <b id="attach"></b></span>
+        </div>
+      </div>
+
+      <div class="email-body" id="body"></div>
+
+      <div class="triage-controls">
+        <div class="triage-group">
+          <label>AI Routing Label</label>
+          <select id="label">
+            <option value="urgent">🔴 Urgent</option>
+            <option value="archive" selected>📦 Archive</option>
+            <option value="follow_up">⭐ Follow Up</option>
+            <option value="spam">🚫 Spam</option>
+            <option value="delegate">🤝 Delegate</option>
+          </select>
+        </div>
+        
+        <div class="triage-group">
+          <label>Assign Priority</label>
+          <select id="priority">
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low" selected>Low</option>
+          </select>
+        </div>
+
+        <div class="triage-group full-width">
+          <label>Auto-Generated Reply Draft (Optional)</label>
+          <textarea id="reply" rows="3" placeholder="If required, type an automated reply draft here..."></textarea>
+        </div>
+      </div>
+
+      <button style="width: 100%" onclick="doStep()">Execute Triage Decision &rarr;</button>
+      
+      <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <p style="text-align: right; margin: 0.5rem 0 0 0; font-size: 0.8rem; color: var(--muted);"><span id="remaining"></span> items left in queue</p>
+    </div>
+
+    <div class="glass-card">
+      <p style="color:var(--muted); font-weight:700; font-size:0.9rem; text-transform:uppercase; margin-top:0;">Terminal Output</p>
+      <pre id="output" id="json-output">>> Waiting for engine initialization...</pre>
+    </div>
   </div>
-  <div class="section" id="email-panel" style="display:none">
-    <p class="label">📨 Current Email</p>
-    <p><b>From:</b> <span id="sender"></span></p>
-    <p><b>Subject:</b> <span id="subject"></span></p>
-    <p><b>Body:</b></p>
-    <pre id="body"></pre>
-    <p><b>Thread length:</b> <span id="thread"></span> &nbsp;
-       <b>Attachment:</b> <span id="attach"></span> &nbsp;
-       <b>Remaining:</b> <span id="remaining"></span></p>
-    <hr>
-    <b>Label:</b>
-    <select id="label">
-      <option>urgent</option><option selected>archive</option>
-      <option>follow_up</option><option>spam</option><option>delegate</option>
-    </select>
-    <b>Priority:</b>
-    <select id="priority">
-      <option>high</option><option selected>low</option><option>medium</option>
-    </select>
-    <br><br>
-    <b>Reply draft (optional):</b><br>
-    <textarea id="reply" rows="3" style="width:100%;background:#1e1e1e;color:#eee;border:1px solid #555;border-radius:4px;padding:0.4rem"></textarea>
-    <br><br>
-    <button onclick="doStep()">Submit Triage Decision</button>
-  </div>
-  <div class="section">
-    <p class="label">📋 Last Response</p>
-    <pre id="output">— press Reset to start —</pre>
-  </div>
+
   <script>
+    let totalEmails = 0;
+
     async function reset() {
       const task = document.getElementById('task').value;
       const r = await fetch('/reset', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task_name:task})});
       const d = await r.json();
+      totalEmails = d.emails_remaining;
       showEmail(d);
       document.getElementById('output').textContent = JSON.stringify(d, null, 2);
     }
@@ -230,11 +379,20 @@ WEB_UI = """
         priority: document.getElementById('priority').value,
         reply_draft: document.getElementById('reply').value || null,
       };
+      
+      // Animate out
+      document.getElementById('email-panel').classList.remove('slide-in');
+      document.getElementById('email-panel').style.opacity = '0.5';
+
       const r = await fetch('/step', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       const d = await r.json();
+      
+      document.getElementById('email-panel').style.opacity = '1';
+      document.getElementById('email-panel').classList.add('slide-in');
+
       if (d.done) {
         document.getElementById('email-panel').style.display='none';
-        document.getElementById('output').textContent = 'Episode complete!\n\n' + JSON.stringify(d, null, 2);
+        document.getElementById('output').textContent = 'WORKSPACE COMPLETE!\nFinal Stats:\n\n' + JSON.stringify(d, null, 2);
       } else {
         showEmail(d);
         document.getElementById('output').textContent = JSON.stringify(d, null, 2);
@@ -242,18 +400,32 @@ WEB_UI = """
     }
     function showEmail(d) {
       document.getElementById('email-panel').style.display='block';
+      
+      // Force reflow for animation
+      const panel = document.getElementById('email-panel');
+      panel.style.animation = 'none';
+      panel.offsetHeight; 
+      panel.style.animation = null;
+
       document.getElementById('sender').textContent = d.sender;
       document.getElementById('subject').textContent = d.subject;
       document.getElementById('body').textContent = d.body;
       document.getElementById('thread').textContent = d.thread_length;
-      document.getElementById('attach').textContent = d.has_attachment ? 'Yes' : 'No';
+      document.getElementById('attach').textContent = d.has_attachment ? 'Yes' : 'None';
       document.getElementById('remaining').textContent = d.emails_remaining;
       document.getElementById('reply').value = '';
+      
+      // Update progress bar
+      if(totalEmails > 0) {
+        const completed = totalEmails - d.emails_remaining;
+        document.getElementById('progress-bar').style.width = ((completed / totalEmails) * 100) + '%';
+      }
     }
   </script>
 </body>
 </html>
 """
+
 
 
 @app.get("/web", response_class=HTMLResponse)
