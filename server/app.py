@@ -358,7 +358,7 @@ WEB_UI = """
 
     <div class="glass-card">
       <p style="color:var(--muted); font-weight:700; font-size:0.9rem; text-transform:uppercase; margin-top:0;">Terminal Output</p>
-      <pre id="output" id="json-output">>> Waiting for engine initialization...</pre>
+      <pre id="output">>> Waiting for engine initialization...</pre>
     </div>
   </div>
 
